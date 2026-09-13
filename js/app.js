@@ -5,7 +5,7 @@ import * as store from './store.js';
 import { seedPlants } from './plants.js';
 import { getWeather, isoDay, rainWindow, climatologyET0 } from './weather.js';
 
-export const APP_VERSION = '1.12.0';   // bump with sw.js CACHE on every release
+export const APP_VERSION = '1.13.0';   // bump with sw.js CACHE on every release
 
 let state = store.load();
 let weather = { days: [], source: 'climatology' };
@@ -157,11 +157,19 @@ function viewToday() {
         ? 'Using cached weather — no connection right now.'
         : 'No weather data reached this device. Figures below use a seasonal average, not today’s actual conditions.') : null,
 
+    // The bulk bar lives OUTSIDE the due section on purpose. It used to sit
+    // inside it, which meant that logging the last due plant took the whole
+    // bar away with it — including `Log ALL`, the one control whose scope does
+    // not depend on this device's idea of what is due, and including the date
+    // picker, so a backdated session could strand you with no way back to
+    // today. You water the yard and then want to record it; that is exactly
+    // the moment nothing is due.
+    bulkBar(due),
+
     due.length === 0
       ? el('p', { class: 'empty' }, 'Nothing is due. Every root ball is above the watering threshold.')
       : el('section', {},
           el('h2', {}, `Water today — ${due.length} plants, ${gal(due.reduce((s,x)=>s+x.r.gallons,0))} gal`),
-          bulkBar(due),
           el('ul', { class: 'list' }, due.map(x => plantRow(x, true)))),
 
     el('section', {},
@@ -187,17 +195,20 @@ function bulkBar(due) {
       (when === today()
         ? 'Watered everything already? Log the round in one go. '
         : `Backdating to ${when} — the model will replay the weather since then. `) +
-      `These buttons cover the ${due.length} plants due today, not all ${all.length}.`),
+      (due.length
+        ? `The two “due” buttons cover the ${due.length} plants due on this device, not all ${all.length}. ` +
+          'Another device may think a different set is due, so use “Log ALL” for a whole-yard round.'
+        : `Nothing is due on this device right now. “Log ALL ${all.length}” still works — use it if you watered the yard anyway.`)),
     el('label', { class: 'amt' },
       el('span', { class: 'unit' }, 'date'),
       el('input', {
         type: 'date', value: when, max: today(),
         onchange: e => { state.logDate = e.target.value || null; store.save(state); render(); },
       })),
-    el('button', { class: 'btn small', onclick: logRound(x => x.r.gallons, `the model's doses (${gal(model)} gal)`) },
-      `Log round — model, ${gal(model)} gal`),
-    el('button', { class: 'btn small', onclick: logRound(x => x.p.nurseryGal || x.r.gallons, `the nursery doses (${gal(nursery)} gal)`) },
-      `Log round — nursery, ${gal(nursery)} gal`),
+    due.length ? el('button', { class: 'btn small', onclick: logRound(x => x.r.gallons, `the model's doses (${gal(model)} gal)`) },
+      `Log round — model, ${gal(model)} gal`) : null,
+    due.length ? el('button', { class: 'btn small', onclick: logRound(x => x.p.nurseryGal || x.r.gallons, `the nursery doses (${gal(nursery)} gal)`) },
+      `Log round — nursery, ${gal(nursery)} gal`) : null,
     el('button', {
       class: 'btn small',
       onclick: () => {
