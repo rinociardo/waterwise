@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WaterWise — model tests</title>
+<style>
+  body{font:15px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;
+       background:#EDEFEA;color:#1A211B}
+  @media(prefers-color-scheme:dark){body{background:#13170F;color:#E7EBE1}}
+  h1{font-size:1.2rem}
+  .sum{font-family:ui-monospace,monospace;padding:.6rem .8rem;border:1px solid currentColor;
+       border-radius:5px;margin:1rem 0}
+  .pass{color:#2E5B45} .fail{color:#9A2B2C}
+  ul{list-style:none;padding:0} li{padding:.2rem 0;font-size:.9rem}
+  code{font-family:ui-monospace,monospace;font-size:.8rem;opacity:.75;display:block;
+       margin-left:1.6rem}
+</style></head><body>
+<h1>WaterWise — model tests</h1>
+<div id="out">Running…</div>
+<script type="module">
+import { summary } from './tests.js';
+const s = summary();
+document.getElementById('out').innerHTML =
+  `<div class="sum ${s.fail ? 'fail' : 'pass'}">${s.pass}/${s.total} passed` +
+  (s.cadence ? `<br>cadence: ${s.cadence}` : '') +
+  (s.fullRound ? `<br>full round: ${s.fullRound.toFixed(0)} gal (nursery table: 197)` : '') +
+  `</div><ul>` +
+  s.results.map(r => `<li class="${r.ok?'pass':'fail'}">${r.ok?'✓':'✗'} ${r.name}` +
+    (r.ok ? '' : `<code>${r.msg}</code>`) + `</li>`).join('') + '</ul>';
+</script>
+</body></html>
