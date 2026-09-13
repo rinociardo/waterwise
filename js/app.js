@@ -5,7 +5,7 @@ import * as store from './store.js';
 import { seedPlants } from './plants.js';
 import { getWeather, isoDay, rainWindow, climatologyET0 } from './weather.js';
 
-export const APP_VERSION = '1.13.0';   // bump with sw.js CACHE on every release
+export const APP_VERSION = '1.13.1';   // bump with sw.js CACHE on every release
 
 let state = store.load();
 let weather = { days: [], source: 'climatology' };
@@ -184,11 +184,33 @@ function bulkBar(due) {
   const model = due.reduce((s, x) => s + x.r.gallons, 0);
   const nursery = due.reduce((s, x) => s + (x.p.nurseryGal || 0), 0);
   const when = store.loggingDate(state);
-  const logRound = (pick, label) => () => {
-    if (!confirm(`Log ${label} for all ${due.length} plants, dated ${when}?`)) return;
-    for (const x of due) store.logWater(state, x.p.id, pick(x), when);
+
+  /** Log a set of plants, refusing to silently double up.
+   *
+   *  Pressing a bulk button twice used to add a second entry for every plant
+   *  with no warning at all: depletion is clamped at zero, so the screen looks
+   *  identical while the log doubles and the season's gallons go with it. Now
+   *  anything already watered on this date is reported and skipped. */
+  const logSet = (set, pick, label) => () => {
+    const already = store.wateredOn(state, when);
+    const fresh = set.filter(x => !already.has(x.p.id));
+    const dup = set.length - fresh.length;
+
+    if (!fresh.length) {
+      alert(`All ${set.length} already have a watering logged for ${when}.\n\n` +
+            'Nothing added. To change what was recorded, delete the entry on the Log tab and log it again.');
+      return;
+    }
+    const msg = dup
+      ? `${dup} of these ${set.length} already have an entry for ${when}.\n\n` +
+        `OK logs ${label} for the remaining ${fresh.length} only.`
+      : `Log ${label} for all ${fresh.length} plants, dated ${when}?`;
+    if (!confirm(msg)) return;
+
+    for (const x of fresh) store.logWater(state, x.p.id, pick(x), when);
     commit();
   };
+  const logRound = (pick, label) => logSet(due, pick, label);
   const all = rows();
   return el('div', { class: 'bulk' },
     el('span', { class: 'hint' },
@@ -211,11 +233,7 @@ function bulkBar(due) {
       `Log round — nursery, ${gal(nursery)} gal`) : null,
     el('button', {
       class: 'btn small',
-      onclick: () => {
-        if (!confirm(`Log every one of the ${all.length} plants, dated ${when}?`)) return;
-        for (const x of all) store.logWater(state, x.p.id, x.p.nurseryGal || x.r.gallons, when);
-        commit();
-      },
+      onclick: logSet(all, x => x.p.nurseryGal || x.r.gallons, 'the nursery doses'),
     }, `Log ALL ${all.length} — nursery doses`),
     when !== today()
       ? el('button', { class: 'btn small', onclick: () => { state.logDate = null; store.save(state); render(); } }, 'Back to today')
@@ -818,15 +836,36 @@ function logByDate() {
     const ids = new Set(onDate.map(e => e.plantId));
     const total = onDate.reduce((s, e) => s + (e.gallons || 0), 0);
     const missed = live.filter(p => !ids.has(p.id));
+    const dups = store.duplicateCount(state, date);
     return el('li', { class: 'row' },
       el('div', { class: 'row-head' },
         el('div', { class: 'grow' },
           el('div', { class: 'name' }, date),
-          el('div', { class: 'sub' }, `${ids.size} of ${live.length} plants · ${gal(total)} gal`)),
+          el('div', { class: 'sub' }, `${ids.size} of ${live.length} plants · ${gal(total)} gal` +
+            (dups ? ` · ${onDate.length} entries` : ''))),
         el('div', { class: 'dose' },
           el('strong', {}, missed.length ? `${missed.length}` : '✓'),
           el('span', { class: 'sub' }, missed.length ? 'not logged' : 'complete')),
       ),
+
+      // A date can hold more entries than plants if a bulk button was pressed
+      // twice. Depletion clamps at zero either way, so nothing on the Today
+      // screen looks wrong — only the gallons total gives it away.
+      dups
+        ? el('div', { class: 'acts' },
+            el('span', { class: 'seg-label' }, 'Duplicates'),
+            el('span', { class: 'kv' },
+              `${dups} extra ${dups === 1 ? 'entry' : 'entries'} — this date was logged more than once`),
+            el('button', {
+              class: 'btn small danger',
+              onclick: () => {
+                if (!confirm(`Keep one watering per plant on ${date} and delete the other ${dups}?\n\n` +
+                             'The most recent entry for each plant is kept. Gauge readings are not touched.')) return;
+                store.dedupeWaterings(state, date);
+                commit();
+              },
+            }, `Remove ${dups} duplicate${dups === 1 ? '' : 's'}`))
+        : null,
       missed.length
         ? el('details', {},
             el('summary', {}, `Show the ${missed.length} not logged on this date`),
@@ -912,7 +951,11 @@ function viewSettings() {
     el('div', { class: 'acts' },
       el('button', { class: 'btn', onclick: doExport }, 'Export JSON'),
       el('label', { class: 'btn file' }, 'Import JSON',
-        el('input', { type: 'file', accept: 'application/json', onchange: doImport })),
+        // No `accept` filter. iOS greys out .json files in the Files picker
+        // when accept is 'application/json', because it matches on UTI rather
+        // than MIME type — the file is right there and cannot be selected.
+        // Better to accept anything and fail on parse with a clear message.
+        el('input', { type: 'file', onchange: doImport })),
       el('button', { class: 'btn danger', onclick: () => {
         if (confirm('Erase all plants, readings and history?')) {
           state = store.reset(); store.save(state); refresh();

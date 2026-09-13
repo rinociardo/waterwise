@@ -246,6 +246,38 @@ export function removeLogEntry(state, ts) {
   state.log = state.log.filter(e => e.ts !== ts);
 }
 
+/** Plant ids that already have a watering logged on `date`. */
+export function wateredOn(state, date) {
+  return new Set(state.log
+    .filter(e => e.type === 'water' && e.date === date)
+    .map(e => e.plantId));
+}
+
+/** How many surplus watering entries a date carries — entries beyond the first
+ *  per plant. Pressing a bulk button twice is silent otherwise: the model
+ *  clamps depletion at zero either way, so nothing on screen changes while the
+ *  log quietly doubles and the season's gallons total goes with it. */
+export function duplicateCount(state, date) {
+  const waters = state.log.filter(e => e.type === 'water' && e.date === date);
+  return waters.length - new Set(waters.map(e => e.plantId)).size;
+}
+
+/** Collapse a date to one watering per plant, keeping the most recently
+ *  entered — if two differ, the later one is the corrected intent. Readings
+ *  are never touched. Returns how many entries were removed. */
+export function dedupeWaterings(state, date) {
+  const keep = new Map();          // plantId -> highest ts seen
+  for (const e of state.log) {
+    if (e.type !== 'water' || e.date !== date) continue;
+    const best = keep.get(e.plantId);
+    if (best === undefined || e.ts > best) keep.set(e.plantId, e.ts);
+  }
+  const before = state.log.length;
+  state.log = state.log.filter(e =>
+    e.type !== 'water' || e.date !== date || keep.get(e.plantId) === e.ts);
+  return before - state.log.length;
+}
+
 /** The date new log entries should carry. */
 export function loggingDate(state) {
   return state.logDate || isoDay();

@@ -344,6 +344,32 @@ check('a fresh state has never been backed up', () => {
   eq(store.daysSinceBackup(store.defaultState(), '2026-09-13'), Infinity, 'so the nudge shows at once');
 });
 
+check('bulk logging does not silently double up', () => {
+  const st = store.defaultState();
+  store.logWater(st, 'thuja', 18, '2026-09-13');
+  eq(store.wateredOn(st, '2026-09-13').has('thuja'), true, 'thuja is logged for that date');
+  eq(store.wateredOn(st, '2026-09-12').has('thuja'), false, 'but not for the day before');
+  eq(store.duplicateCount(st, '2026-09-13'), 0, 'one entry is not a duplicate');
+});
+
+check('duplicates are counted and collapsed, newest kept', () => {
+  const st = store.defaultState();
+  store.logWater(st, 'thuja', 18, '2026-09-13');
+  st.log[0].ts = 1000;
+  store.logWater(st, 'thuja', 20, '2026-09-13');
+  st.log[0].ts = 2000;
+  store.logWater(st, 'cryptomeria', 20, '2026-09-13');
+  store.logReading(st, 'thuja', 'dry', { predictedKey: 'dry', agreed: true, depletionGal: 1, kSite: 1 }, '2026-09-13');
+  eq(store.duplicateCount(st, '2026-09-13'), 1, 'one surplus watering');
+
+  eq(store.dedupeWaterings(st, '2026-09-13'), 1, 'one entry removed');
+  const waters = st.log.filter(e => e.type === 'water' && e.date === '2026-09-13');
+  eq(waters.length, 2, 'one per plant left');
+  eq(waters.find(e => e.plantId === 'thuja').gallons, 20, 'the later entry is the one kept');
+  eq(st.log.filter(e => e.type === 'reading').length, 1, 'readings are untouched');
+  eq(store.duplicateCount(st, '2026-09-13'), 0, 'and the date is clean afterwards');
+});
+
 export function run() { return results; }
 export function summary() {
   const pass = results.filter(r => r.ok).length;
