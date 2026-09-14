@@ -7,7 +7,7 @@ import {
   dailyUseGal, rainGainGal, recommend, applyReading, simulate, meanInterval,
   bandForFraction, clamp, madFor,
 } from '../js/model.js';
-import { seedPlants } from '../js/plants.js';
+import { seedPlants, PLANT_TEMPLATES } from '../js/plants.js';
 import { mergeSeed } from '../js/store.js';
 import * as store from '../js/store.js';
 
@@ -35,7 +35,16 @@ check('1 inch over 1 sq ft is 0.623 gal', () => {
   near(144 / 231, 0.623, 0.002, 'gallons per inch-sqft');
 });
 
-check('seed produces 35 plants', () => eq(plants.length, 35, 'plant count'));
+// The count is derived, not hardcoded: adding a plant to the seed should not
+// fail a test whose subject is something else. What matters is that every
+// template expands to its qty and that every id is unique.
+const SEED_N = seedPlants().length;
+check('every template expands to its quantity, with unique ids', () => {
+  const want = PLANT_TEMPLATES.reduce((s, t) => s + t.qty, 0);
+  eq(plants.length, want, 'one plant per unit of qty');
+  eq(new Set(plants.map(p => p.id)).size, plants.length, 'ids are unique');
+  ok(plants.every(p => p.planted && p.name), 'each carries a name and a planting date');
+});
 
 // ── reservoir ───────────────────────────────────────────────────────────────
 check('Cryptomeria reservoir is near its nursery dose', () => {
@@ -239,7 +248,7 @@ check('merging keeps user state and takes new seed values', () => {
   eq(thuja.hasRing, true, 'user delivery choice must survive');
   eq(thuja.depletionGal, 3, 'state must survive');
   ok(thuja.ballDiaIn !== 99, 'seed dimensions must win over stale saved ones');
-  eq(m.plants.length, 35, 'merged count');
+  eq(m.plants.length, SEED_N, 'merged count');
 });
 
 check('merging is a no-op when nothing changed', () => {
@@ -289,7 +298,7 @@ function fakeState() {
 check('a new plant can copy an existing one’s shape', () => {
   const st = fakeState();
   const p = store.addPlant(st, { name: 'Skyrocket Juniper 9', from: 'juniper-1' });
-  eq(st.plants.length, 36, 'count');
+  eq(st.plants.length, SEED_N + 1, 'count');
   eq(p.custom, true, 'must be marked custom');
   eq(p.ballDiaIn, byId('juniper-1').ballDiaIn, 'shape copied');
   ok(p.id !== 'juniper-1', 'must get its own id');
@@ -307,7 +316,7 @@ check('deleting a seed plant keeps it deleted through a merge', () => {
   const st = fakeState();
   st.log = [{ ts: 1, date: '2026-09-10', plantId: 'juniper-1', type: 'water', gallons: 8 }];
   store.deletePlant(st, 'juniper-1');
-  eq(st.plants.length, 34, 'removed');
+  eq(st.plants.length, SEED_N - 1, 'removed');
   eq(st.log.length, 0, 'its log entries went too');
   ok(st.removedSeedIds.includes('juniper-1'), 'remembered as removed');
   const m = mergeSeed(st.plants, st.removedSeedIds);

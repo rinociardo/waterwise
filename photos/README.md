@@ -1,8 +1,8 @@
 # Plant photos
 
 Drop one image per **variety** here, named after the plant key. All 8 junipers
-share `juniper.jpg`, all 3 hydrangeas share `hydrangea.jpg`, and so on — 12
-files cover all 35 plants.
+share `juniper.jpg`, all 3 hydrangeas share `hydrangea.jpg`, and so on — 13
+files cover all 36 plants.
 
     cryptomeria.jpg      Cryptomeria japonica 'Radicans'
     thuja.jpg            Thuja x 'Green Giant'
@@ -13,6 +13,7 @@ files cover all 35 plants.
     winterberry-f.jpg    Ilex verticillata 'Winter Red'
     winterberry-m.jpg    Ilex verticillata 'Southern Gentleman'
     viburnum.jpg         Viburnum nudum 'Winterthur'
+    viburnum-brandywine.jpg  Viburnum nudum 'Brandywine'
     cornus.jpg           Cornus sericea (the variegated one you were sent)
     redbud.jpg           Cercis canadensis
     panicum.jpg          Panicum virgatum 'North Wind'

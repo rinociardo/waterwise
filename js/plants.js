@@ -1,4 +1,5 @@
-// plants.js — the seed dataset: 34 plants installed 4 September 2026.
+// plants.js — the seed dataset: 34 plants installed 4 September 2026,
+// plus a redbud and a 'Brandywine' viburnum added since.
 //
 // ballDiaIn / ballDepthIn follow ANSI Z60.1 nursery-stock conventions for the
 // graded heights; container sizes use the pot's own dimensions.
@@ -93,6 +94,22 @@ const TEMPLATES = [
     ballDiaIn: 15, ballDepthIn: 12, bufferFactor: 1.4, rootAccess0: 0.90,
     heightFt: 3, spreadFt: 3, ringDiaFt: 2.5, interception: 0.12,
     nurseryGal: 6, sun: 'full', evergreen: false,
+  },
+  {
+    key: 'viburnum-brandywine', photo: './photos/viburnum-brandywine.jpg',
+    blurb: "Pollination partner for the two 'Winterthur'. Same species, same "
+         + 'bloom time, but a different clone — which is the point, because '
+         + "'Winterthur' sets very little fruit on its own pollen. Berries run "
+         + 'green to pink to blue, often all three on one cluster.',
+    name: 'Brandywine Viburnum', botanical: 'Viburnum nudum',
+    cultivar: "'Brandywine'", sizeLabel: '#3', qty: 1,
+    planted: '2026-09-14',
+    ballDiaIn: 8.5, ballDepthIn: 8, bufferFactor: 1.4, rootAccess0: 0.90,
+    heightFt: 2.5, spreadFt: 2, ringDiaFt: 2, interception: 0.10,
+    nurseryGal: 2, sun: 'full', evergreen: false,
+    note: 'Ten days behind the rest of the yard on the establishment curve, so '
+        + 'it stays on the short watering interval after the others stretch out. '
+        + 'No fertiliser before spring.',
   },
   {
     key: 'cornus', photo: './photos/cornus.jpg',
@@ -203,7 +220,10 @@ export function seedPlants() {
         ...rest,
         id,
         name: qty > 1 ? `${t.name} ${i}` : t.name,
-        planted: PLANTED,
+        // Most of the yard went in on one day, but later additions carry their
+        // own date — the establishment curve is measured from the day the
+        // roots were cut, so a plant added in October is not six weeks along.
+        planted: t.planted || PLANTED,
         kSite: SUN_SEED[t.sun] ?? 1.0,
         depletionGal: 0,
         hasRing: false,
