@@ -231,8 +231,8 @@ Only `Reset everything` in Settings discards data.
 ## Photos
 
 Drop one image per variety into `photos/`, named after the plant key —
-`juniper.jpg` covers all eight Skyrockets, so eleven files cover all
-thirty-four plants. See `photos/README.md` for the list. Around 400x400 is
+`juniper.jpg` covers all eight Skyrockets, so thirteen files cover all
+thirty-six plants. See `photos/README.md` for the list. Around 400x400 is
 plenty; these get cached for offline use. Missing files are not an error, and
 the app hides any image that fails to load.
 
@@ -261,6 +261,14 @@ juniper 6. For a real survey, measure along a baseline with a tape and type the
 offsets in.
 
 Circle size is canopy spread; colour is water remaining, matching the bars.
+
+**Names** toggles a short label beside every plant — `Jun 3`, `Vib W 1`,
+`Switch 7` — which is what makes fine positioning possible at all, since one
+bare circle looks much like another. Tap a plant for its full name. The short
+form comes from `short:` in `plants.js`, and labels are drawn in a pass after
+every circle so a name is never buried under a neighbour's canopy. In the
+tightest clusters the labels still collide; they separate as you drag the
+plants apart, which is the moment you need them.
 
 ## Adding and removing plants
 

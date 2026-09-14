@@ -205,3 +205,8 @@ details summary{font-size:.8rem;color:var(--soft);cursor:pointer;padding:.3rem 0
 .danger-zone{margin-top:.5rem}
 .danger-zone summary{font-size:.75rem;color:var(--hot);cursor:pointer;padding:.25rem 0}
 .danger-zone .hint{margin:.25rem 0 .5rem}
+/* Short names beside every plant while placing. Deliberately lighter and
+   smaller than the selected plant's label, and painted over the canopies
+   rather than under them. */
+.map .pintag{fill:var(--soft);font-size:.3px;text-anchor:middle;font-weight:600;
+  font-family:var(--mono);paint-order:stroke;stroke:var(--surface);stroke-width:.09px}

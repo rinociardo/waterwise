@@ -15,7 +15,7 @@ const PLANTED = '2026-09-04';
 // carries its own learned kSite (the microsite is per-plant, not per-species).
 const TEMPLATES = [
   {
-    key: 'cryptomeria', photo: './photos/cryptomeria.jpg',
+    key: 'cryptomeria', short: 'Crypt', photo: './photos/cryptomeria.jpg',
     blurb: 'Japanese cedar. The largest plant here and the slowest to establish — roughly three years. Bronzes in hard winters, which is normal, not distress.', name: 'Cryptomeria', botanical: 'Cryptomeria japonica',
     cultivar: "'Radicans'", sizeLabel: "12' B&B", qty: 1,
     ballDiaIn: 36, ballDepthIn: 22, bufferFactor: 1.3, rootAccess0: 0.45,
@@ -23,7 +23,7 @@ const TEMPLATES = [
     nurseryGal: 20, sun: 'full', evergreen: true,
   },
   {
-    key: 'thuja', photo: './photos/thuja.jpg',
+    key: 'thuja', short: 'Thuja', photo: './photos/thuja.jpg',
     blurb: 'Fast, dense screening conifer. Vigorous once rooted; the first two summers decide it.', name: 'Green Giant', botanical: 'Thuja x',
     cultivar: "'Green Giant'", sizeLabel: "10' B&B", qty: 1,
     ballDiaIn: 32, ballDepthIn: 20, bufferFactor: 1.3, rootAccess0: 0.45,
@@ -31,7 +31,7 @@ const TEMPLATES = [
     nurseryGal: 18, sun: 'full', evergreen: true,
   },
   {
-    key: 'ilex-opaca', photo: './photos/ilex-opaca.jpg',
+    key: 'ilex-opaca', short: 'Holly', photo: './photos/ilex-opaca.jpg',
     blurb: 'Broadleaf evergreen holly, native to the mid-Atlantic. Slower than the conifers and worth the patience.', name: 'American Holly', botanical: 'Ilex opaca',
     cultivar: "'Satyr Hill'", sizeLabel: "8' B&B", qty: 1,
     ballDiaIn: 30, ballDepthIn: 20, bufferFactor: 1.3, rootAccess0: 0.45,
@@ -39,7 +39,7 @@ const TEMPLATES = [
     nurseryGal: 15, sun: 'full', evergreen: true,
   },
   {
-    key: 'chamaecyparis', photo: './photos/chamaecyparis.jpg',
+    key: 'chamaecyparis', short: 'Cedar', photo: './photos/chamaecyparis.jpg',
     blurb: 'Weeping Alaskan cedar. The least drought-tolerant conifer in the yard — if anything browns first, expect it to be one of these.', name: 'Weeping Alaskan Cedar',
     botanical: 'Chamaecyparis nootkatensis', cultivar: "'Pendula'",
     sizeLabel: "7' B&B", qty: 2,
@@ -49,7 +49,7 @@ const TEMPLATES = [
     note: 'Drought-sensitive — the least forgiving conifer here.',
   },
   {
-    key: 'juniper', photo: './photos/juniper.jpg',
+    key: 'juniper', short: 'Jun', photo: './photos/juniper.jpg',
     blurb: 'Narrow columnar juniper, very upright. Small root ball for its height, so it dries faster than its size suggests.', name: 'Skyrocket Juniper', botanical: 'Juniperus scopulorum',
     cultivar: "'Skyrocket'", sizeLabel: "5' B&B", qty: 8,
     ballDiaIn: 20, ballDepthIn: 16, bufferFactor: 1.3, rootAccess0: 0.45,
@@ -58,7 +58,7 @@ const TEMPLATES = [
     note: 'Scattered in groups of 1–3 — expect kSite to diverge between them.',
   },
   {
-    key: 'hydrangea', photo: './photos/hydrangea.jpg',
+    key: 'hydrangea', short: 'Hyd', photo: './photos/hydrangea.jpg',
     blurb: 'Your early-warning plant. Wilts visibly and dramatically before anything else, and recovers within hours of water.', name: 'Quick Fire Hydrangea',
     botanical: 'Hydrangea paniculata', cultivar: "'Quick Fire'",
     sizeLabel: '#7', qty: 3,
@@ -68,7 +68,7 @@ const TEMPLATES = [
     note: 'Wilt indicator — droops visibly before anything else and recovers.',
   },
   {
-    key: 'winterberry-f', photo: './photos/winterberry-f.jpg',
+    key: 'winterberry-f', short: 'Winb F', photo: './photos/winterberry-f.jpg',
     blurb: 'Deciduous holly, wetland native. Drops its leaves and carries red berries on bare stems through winter.', name: 'Winterberry (female)',
     botanical: 'Ilex verticillata', cultivar: "'Winter Red'",
     sizeLabel: '#7', qty: 3,
@@ -78,7 +78,7 @@ const TEMPLATES = [
     note: 'Wetland native — the most forgiving thing in the yard.',
   },
   {
-    key: 'winterberry-m', photo: './photos/winterberry-m.jpg',
+    key: 'winterberry-m', short: 'Winb M', photo: './photos/winterberry-m.jpg',
     blurb: 'The pollinator. No berries on any of the three females without it, and it produces none itself.', name: 'Winterberry (male)',
     botanical: 'Ilex verticillata', cultivar: "'Southern Gentleman'",
     sizeLabel: '#7', qty: 1,
@@ -88,7 +88,7 @@ const TEMPLATES = [
     note: 'Pollinator for all three females — losing it costs the berries.',
   },
   {
-    key: 'viburnum', photo: './photos/viburnum.jpg',
+    key: 'viburnum', short: 'Vib W', photo: './photos/viburnum-winterthur.jpg',
     blurb: 'Glossy summer foliage, pink-to-blue berries, strong red autumn colour. Tolerates wet ground well.', name: 'Winterthur Viburnum', botanical: 'Viburnum nudum',
     cultivar: "'Winterthur'", sizeLabel: '#10', qty: 2,
     ballDiaIn: 15, ballDepthIn: 12, bufferFactor: 1.4, rootAccess0: 0.90,
@@ -96,7 +96,7 @@ const TEMPLATES = [
     nurseryGal: 6, sun: 'full', evergreen: false,
   },
   {
-    key: 'viburnum-brandywine', photo: './photos/viburnum-brandywine.jpg',
+    key: 'viburnum-brandywine', short: 'Vib B', photo: './photos/viburnum-brandywine.jpg',
     blurb: "Pollination partner for the two 'Winterthur'. Same species, same "
          + 'bloom time, but a different clone — which is the point, because '
          + "'Winterthur' sets very little fruit on its own pollen. Berries run "
@@ -114,7 +114,7 @@ const TEMPLATES = [
         + 'No fertiliser before spring.',
   },
   {
-    key: 'cornus', photo: './photos/cornus.jpg',
+    key: 'cornus', short: 'Cornus', photo: './photos/cornus.jpg',
     blurb: "Variegated red-twig dogwood — white-margined leaves, not the plain green 'Baileyi' on the invoice. Coppice a third of the stems each late winter for colour.", name: 'Variegated Dogwood', botanical: 'Cornus sericea',
     cultivar: "'Baileyi' (supplied variegated)", sizeLabel: '#5', qty: 3,
     ballDiaIn: 11, ballDepthIn: 10, bufferFactor: 1.4, rootAccess0: 0.90,
@@ -123,7 +123,7 @@ const TEMPLATES = [
     note: 'Variegated tissue scorches in afternoon sun — watch, do not overwater.',
   },
   {
-    key: 'redbud', photo: './photos/redbud.jpg',
+    key: 'redbud', short: 'Redbud', photo: './photos/redbud.jpg',
     blurb: "Eastern redbud — magenta flowers directly on bare branches in early "
          + "spring, before the leaves. Native understory tree. Resents root "
          + "disturbance more than anything else here, so the first two seasons "
@@ -138,7 +138,7 @@ const TEMPLATES = [
         + 'plant that suffers. Mature spread is 20-35 ft.',
   },
   {
-    key: 'panicum', photo: './photos/panicum.jpg',
+    key: 'panicum', short: 'Switch', photo: './photos/panicum.jpg',
     blurb: 'Upright switchgrass, blue-green turning gold. A prairie plant: established after one season, and it rots if kept moist.', name: 'North Wind Switchgrass',
     botanical: 'Panicum virgatum', cultivar: "'North Wind'",
     sizeLabel: '#1', qty: 9,
@@ -177,6 +177,7 @@ export const LAYOUT = {
 
   // Redbud: apex of a shallow triangle between the two eastern dogwoods.
   'redbud':          [10.25, 3.2],
+  'viburnum-brandywine': [3.0, 3.0],
 
   // North-west corner bed.
   'chamaecyparis-2': [ 1.9, 1.7],
@@ -222,6 +223,7 @@ export function seedPlants() {
         ...rest,
         id,
         name: qty > 1 ? `${t.name} ${i}` : t.name,
+        short: qty > 1 ? `${t.short} ${i}` : t.short,
         // Most of the yard went in on one day, but later additions carry their
         // own date — the establishment curve is measured from the day the
         // roots were cut, so a plant added in October is not six weeks along.

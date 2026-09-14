@@ -5,7 +5,7 @@ import * as store from './store.js';
 import { seedPlants } from './plants.js';
 import { getWeather, isoDay, rainWindow, climatologyET0 } from './weather.js';
 
-export const APP_VERSION = '1.15.1';   // bump with sw.js CACHE on every release
+export const APP_VERSION = '1.16.0';   // bump with sw.js CACHE on every release
 
 let state = store.load();
 let weather = { days: [], source: 'climatology' };
@@ -542,6 +542,7 @@ function placement(p) {
 
 let mapSel = null;
 let mapDrag = null;
+let mapLabels = false;   // view preference, deliberately not persisted
 
 function viewMap() {
   const widthM = state.site.eastWestM, lengthM = state.site.northSouthM;
@@ -598,6 +599,12 @@ function viewMap() {
   lbl(PAD - 0.2, PAD + lengthM / 2, 'W');
   lbl(PAD + widthM + 0.2, PAD + lengthM / 2, 'E');
 
+  // Labels are drawn in a second pass, AFTER every circle, so a name is never
+  // hidden under a neighbour's canopy. The selected plant gets its full name;
+  // everything else gets the short form, because 36 full names on a 20 x 10 m
+  // plan at phone width is an unreadable thicket.
+  const labels = [];
+
   for (const { p, r } of placed) {
     const c = gaugeColor(r.depletionFrac);
     const rad = Math.max(0.25, Math.min(1.6, (p.spreadFt * 0.3048) / 2));
@@ -608,13 +615,19 @@ function viewMap() {
       class: 'canopy',
     }));
     g.appendChild(ns('circle', { cx: PAD + p.x, cy: PAD + p.y, r: 0.12, class: 'stem' }));
+    svg.appendChild(g);
+
     if (mapSel === p.id) {
-      const t = ns('text', { x: PAD + p.x, y: PAD + p.y - rad - 0.25, class: 'pinlabel' });
-      t.textContent = p.name;
-      svg.appendChild(g); svg.appendChild(t);
-    } else {
-      svg.appendChild(g);
+      labels.push([PAD + p.x, PAD + p.y - rad - 0.25, p.name, 'pinlabel']);
+    } else if (mapLabels) {
+      labels.push([PAD + p.x, PAD + p.y - rad - 0.18, p.short || p.name, 'pintag']);
     }
+  }
+
+  for (const [x, y, txt, cls] of labels) {
+    const t = ns('text', { x, y, class: cls });
+    t.textContent = txt;
+    svg.appendChild(t);
   }
 
   // Dragging, in SVG user units so it works at any zoom.
@@ -676,6 +689,14 @@ function viewMap() {
       'Drag a plant to place it. Circles are canopy spread, coloured by water left. ' +
       `Grid is 1 m; heavier lines every 5 m. North is up: ${widthM} m east–west across, ` +
       `${lengthM} m north–south down.`),
+    el('div', { class: 'acts' },
+      el('button', {
+        class: `btn small ${mapLabels ? 'on' : ''}`,
+        title: 'Short name beside every plant — the way to tell juniper 3 from juniper 6 while you place them',
+        onclick: () => { mapLabels = !mapLabels; render(); },
+      }, mapLabels ? '✓ Names' : 'Names'),
+      mapLabels ? el('span', { class: 'kv' }, 'Tap a plant for its full name.') : null,
+    ),
     el('div', { class: 'mapwrap' }, svg),
     sel
       ? el('p', { class: 'hint' },
