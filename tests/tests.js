@@ -370,6 +370,31 @@ check('duplicates are counted and collapsed, newest kept', () => {
   eq(store.duplicateCount(st, '2026-09-13'), 0, 'and the date is clean afterwards');
 });
 
+check('a whole date can be deleted, entries counted first', () => {
+  const st = store.defaultState();
+  store.logWater(st, 'thuja', 18, '2026-09-12');
+  store.logWater(st, 'cryptomeria', 20, '2026-09-13');
+  store.logWater(st, 'thuja', 18, '2026-09-13');
+  store.logReading(st, 'thuja', 'dry', { predictedKey: 'moist', agreed: false, depletionGal: 2, kSite: 1.1 }, '2026-09-13');
+
+  const n = store.entriesOn(st, '2026-09-13');
+  eq(n.water, 2, 'two waterings that day');
+  eq(n.reading, 1, 'one reading that day');
+  eq(n.total, 3, 'three entries in total');
+
+  eq(store.removeLogDate(st, '2026-09-13'), 3, 'all three removed');
+  eq(st.log.length, 1, 'the other date is untouched');
+  eq(st.log[0].date, '2026-09-12', 'and it is the right one');
+  eq(store.entriesOn(st, '2026-09-13').total, 0, 'the date is empty afterwards');
+});
+
+check('deleting a date the log does not have is a no-op', () => {
+  const st = store.defaultState();
+  store.logWater(st, 'thuja', 18, '2026-09-12');
+  eq(store.removeLogDate(st, '2026-01-01'), 0, 'nothing removed');
+  eq(st.log.length, 1, 'nothing lost');
+});
+
 export function run() { return results; }
 export function summary() {
   const pass = results.filter(r => r.ok).length;

@@ -107,6 +107,26 @@ Deleting or correcting an entry works for free, for the same reason.
 of the weather, so it is not replayed. Replaying the readings would teach the
 model the same lesson again every time you edit anything.
 
+### Correcting the log
+
+The log is the only thing that matters, so everything is editable.
+
+- **One entry** — the `×` on any row in *By plant* or *Everything*.
+- **A whole date** — *By date* → `Delete this date…`. It says how many
+  waterings and readings will go before you commit, because removing a day
+  replays the season without it and moves every depletion figure since.
+- **Duplicates** — a date logged twice shows its surplus entry count and a
+  button to collapse it to one watering per plant, keeping the most recent.
+  Worth knowing this is invisible otherwise: depletion clamps at zero either
+  way, so a doubled day looks perfectly normal on Today and only the gallons
+  total gives it away.
+
+**Backfilling** a round you watered but did not record also lives here, on
+*By date*. It used to be a date picker on Today, which made that screen modal —
+the picked date stuck, and every later tap filed water in the past. Recording
+what you are doing now and correcting what you did last week are different
+jobs, so they are on different screens. Today always writes today.
+
 ### Soil moisture readings
 
 The bucket is an **open-loop integrator** and drifts. A gauge reading is a noisy

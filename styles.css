@@ -202,3 +202,6 @@ details summary{font-size:.8rem;color:var(--soft);cursor:pointer;padding:.3rem 0
 .field select{font:inherit;padding:.4rem .5rem;border:1px solid var(--rule);
   border-radius:4px;background:var(--surface);color:var(--ink)}
 .bulk .field{flex:1 1 11rem}
+.danger-zone{margin-top:.5rem}
+.danger-zone summary{font-size:.75rem;color:var(--hot);cursor:pointer;padding:.25rem 0}
+.danger-zone .hint{margin:.25rem 0 .5rem}

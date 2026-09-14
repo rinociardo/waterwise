@@ -5,7 +5,7 @@ import * as store from './store.js';
 import { seedPlants } from './plants.js';
 import { getWeather, isoDay, rainWindow, climatologyET0 } from './weather.js';
 
-export const APP_VERSION = '1.13.1';   // bump with sw.js CACHE on every release
+export const APP_VERSION = '1.14.0';   // bump with sw.js CACHE on every release
 
 let state = store.load();
 let weather = { days: [], source: 'climatology' };
@@ -178,20 +178,19 @@ function viewToday() {
   );
 }
 
-/** Log a whole round at once — the normal case when you have just walked the
- *  yard with a hose rather than tapping each plant as you go. */
-function bulkBar(due) {
-  const model = due.reduce((s, x) => s + x.r.gallons, 0);
-  const nursery = due.reduce((s, x) => s + (x.p.nurseryGal || 0), 0);
-  const when = store.loggingDate(state);
-
-  /** Log a set of plants, refusing to silently double up.
-   *
-   *  Pressing a bulk button twice used to add a second entry for every plant
-   *  with no warning at all: depletion is clamped at zero, so the screen looks
-   *  identical while the log doubles and the season's gallons go with it. Now
-   *  anything already watered on this date is reported and skipped. */
-  const logSet = (set, pick, label) => () => {
+/**
+ * Log a set of plants on a given date, refusing to silently double up.
+ *
+ * Pressing a bulk button twice used to add a second entry for every plant with
+ * no warning at all: depletion is clamped at zero, so the screen looks
+ * identical while the log doubles and the season's gallons go with it. Anything
+ * already watered on that date is now reported and skipped.
+ *
+ * Shared by Today (which always writes today) and the Log tab's backfill panel
+ * (which writes a date you pick there).
+ */
+function logSetOn(set, pick, label, when) {
+  return () => {
     const already = store.wateredOn(state, when);
     const fresh = set.filter(x => !already.has(x.p.id));
     const dup = set.length - fresh.length;
@@ -210,34 +209,41 @@ function bulkBar(due) {
     for (const x of fresh) store.logWater(state, x.p.id, pick(x), when);
     commit();
   };
-  const logRound = (pick, label) => logSet(due, pick, label);
+}
+
+/**
+ * Log a whole round at once — the normal case when you have just walked the
+ * yard with a hose rather than tapping each plant as you go.
+ *
+ * This bar writes TODAY, always. It used to carry a date picker, which made it
+ * a mode: set a past date, forget, and every later tap on this screen quietly
+ * filed water in the past with nothing but a line of hint text to say so.
+ * Backfilling a missed round is a correction to history, so it lives on the Log
+ * tab now, next to the history it corrects.
+ */
+function bulkBar(due) {
+  const model = due.reduce((s, x) => s + x.r.gallons, 0);
+  const nursery = due.reduce((s, x) => s + (x.p.nurseryGal || 0), 0);
+  const when = today();
   const all = rows();
   return el('div', { class: 'bulk' },
     el('span', { class: 'hint' },
-      (when === today()
-        ? 'Watered everything already? Log the round in one go. '
-        : `Backdating to ${when} — the model will replay the weather since then. `) +
+      'Watered everything already? Log the round in one go. ' +
       (due.length
         ? `The two “due” buttons cover the ${due.length} plants due on this device, not all ${all.length}. ` +
           'Another device may think a different set is due, so use “Log ALL” for a whole-yard round.'
-        : `Nothing is due on this device right now. “Log ALL ${all.length}” still works — use it if you watered the yard anyway.`)),
-    el('label', { class: 'amt' },
-      el('span', { class: 'unit' }, 'date'),
-      el('input', {
-        type: 'date', value: when, max: today(),
-        onchange: e => { state.logDate = e.target.value || null; store.save(state); render(); },
-      })),
-    due.length ? el('button', { class: 'btn small', onclick: logRound(x => x.r.gallons, `the model's doses (${gal(model)} gal)`) },
+        : `Nothing is due on this device right now. “Log ALL ${all.length}” still works — use it if you watered the yard anyway.`) +
+      ' For a round you forgot to record, use Log → By date.'),
+    due.length ? el('button', { class: 'btn small',
+      onclick: logSetOn(due, x => x.r.gallons, `the model's doses (${gal(model)} gal)`, when) },
       `Log round — model, ${gal(model)} gal`) : null,
-    due.length ? el('button', { class: 'btn small', onclick: logRound(x => x.p.nurseryGal || x.r.gallons, `the nursery doses (${gal(nursery)} gal)`) },
+    due.length ? el('button', { class: 'btn small',
+      onclick: logSetOn(due, x => x.p.nurseryGal || x.r.gallons, `the nursery doses (${gal(nursery)} gal)`, when) },
       `Log round — nursery, ${gal(nursery)} gal`) : null,
     el('button', {
       class: 'btn small',
-      onclick: logSet(all, x => x.p.nurseryGal || x.r.gallons, 'the nursery doses'),
+      onclick: logSetOn(all, x => x.p.nurseryGal || x.r.gallons, 'the nursery doses', when),
     }, `Log ALL ${all.length} — nursery doses`),
-    when !== today()
-      ? el('button', { class: 'btn small', onclick: () => { state.logDate = null; store.save(state); render(); } }, 'Back to today')
-      : null,
   );
 }
 
@@ -308,8 +314,9 @@ function plantRow({ p, r }, actionable) {
         class: `btn ${r.due ? 'primary' : ''}`, onclick: () => {
           const input = document.getElementById(`amt-${p.id}`);
           const v = parseFloat(input && input.value);
+          // Always today. Per-plant logging on Today is "I just did this".
           store.logWater(state, p.id, Number.isFinite(v) && v > 0 ? v : r.gallons,
-                         store.loggingDate(state));
+                         today());
           commit();
         }
       }, r.due ? 'Log watered' : 'Log anyway'),
@@ -824,14 +831,55 @@ function logByPlant() {
 
 /** One block per date: how many plants got water, and — the useful part —
  *  which ones did not. */
+/**
+ * Backfill a round you watered but did not record.
+ *
+ * This used to be a date picker on the Today screen, which made Today modal:
+ * the picked date stuck, and every subsequent tap filed water in the past.
+ * Here it is unambiguous — you are already looking at history, the date is
+ * chosen per use, and nothing about it persists across a reload.
+ */
+let backfillDate = null;
+
+function backfillPanel() {
+  const all = rows();
+  const when = backfillDate || today();
+  const already = store.wateredOn(state, when);
+  const missing = all.filter(x => !already.has(x.p.id));
+  const nursery = missing.reduce((s, x) => s + (x.p.nurseryGal || 0), 0);
+
+  return el('div', { class: 'bulk' },
+    el('span', { class: 'hint' },
+      'Watered the yard on a day you did not record? File it here and the model ' +
+      'replays the weather from that date forward, which is what makes the ' +
+      'figures come out right rather than just moving water around.'),
+    el('label', { class: 'amt' },
+      el('span', { class: 'unit' }, 'date'),
+      el('input', {
+        type: 'date', value: when, max: today(),
+        onchange: e => { backfillDate = e.target.value || null; render(); },
+      })),
+    missing.length
+      ? el('button', {
+          class: 'btn small',
+          onclick: logSetOn(missing, x => x.p.nurseryGal || x.r.gallons, 'the nursery doses', when),
+        }, `Log ${missing.length} not yet recorded on ${when} — ${gal(nursery)} gal`)
+      : el('span', { class: 'kv' }, `All ${all.length} plants already have an entry for ${when}.`),
+  );
+}
+
 function logByDate() {
   const waters = state.log.filter(e => e.type === 'water');
   const dates = [...new Set(waters.map(e => e.date))].sort().reverse();
   const live = rows().map(x => x.p);
 
-  if (!dates.length) return el('p', { class: 'empty' }, 'No waterings logged yet.');
+  if (!dates.length) {
+    return el('div', {}, backfillPanel(),
+      el('p', { class: 'empty' }, 'No waterings logged yet.'));
+  }
 
-  return el('ul', { class: 'list' }, dates.slice(0, 60).map(date => {
+  return el('div', {}, backfillPanel(),
+    el('ul', { class: 'list' }, dates.slice(0, 60).map(date => {
     const onDate = waters.filter(e => e.date === date);
     const ids = new Set(onDate.map(e => e.plantId));
     const total = onDate.reduce((s, e) => s + (e.gallons || 0), 0);
@@ -879,8 +927,33 @@ function logByDate() {
               },
             }, `Add these ${missed.length} to ${date}`))
         : null,
+
+      // Whole-date deletion. The log is the source of truth, so removing a day
+      // is not a cosmetic tidy-up — the season is replayed without it and every
+      // depletion figure since moves. Hence the count of what goes, readings
+      // included, before you commit to it.
+      el('details', { class: 'danger-zone' },
+        el('summary', {}, `Delete this date…`),
+        (() => {
+          const n = store.entriesOn(state, date);
+          return el('div', {},
+            el('p', { class: 'hint' },
+              `${n.water} watering${n.water === 1 ? '' : 's'}` +
+              (n.reading ? ` and ${n.reading} gauge reading${n.reading === 1 ? '' : 's'}` : '') +
+              `. Removing them replays the season as if ${date} never happened, so ` +
+              'every depletion figure from that day forward changes.' +
+              (n.reading ? ' Learned kSite is not replayed, so it stays as it is.' : '')),
+            el('button', {
+              class: 'btn small danger',
+              onclick: () => {
+                if (!confirm(`Delete all ${n.total} log entries dated ${date}?\n\nThis cannot be undone.`)) return;
+                store.removeLogDate(state, date);
+                commit();
+              },
+            }, `Delete all ${n.total} entries on ${date}`));
+        })()),
     );
-  }));
+  })));
 }
 
 function logAll() {

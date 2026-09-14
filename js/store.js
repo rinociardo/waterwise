@@ -9,7 +9,6 @@ const KEY = 'ww.state.v1';
 export function defaultState() {
   return {
     version: 1,
-    logDate: null,        // date new entries are filed under; null = today
     // The plot is described by its compass extents, not by "width" and
     // "length", so the map can never be drawn at the wrong orientation:
     // eastWestM is always the horizontal axis, northSouthM the vertical, and
@@ -97,6 +96,11 @@ export function load() {
     if (!Array.isArray(s.log)) s.log = [];
 
     if (!Array.isArray(s.removedSeedIds)) s.removedSeedIds = [];
+    // v1.13 and earlier kept a sticky "file entries under this date" mode on
+    // the Today screen. Backfilling lives on the Log tab now and does not
+    // persist, so drop any leftover value rather than leave a dead field that
+    // looks meaningful in an export.
+    delete s.logDate;
     migrateSite(s);
     const m = mergeSeed(s.plants, s.removedSeedIds);
     s.plants = m.plants;
@@ -262,6 +266,27 @@ export function duplicateCount(state, date) {
   return waters.length - new Set(waters.map(e => e.plantId)).size;
 }
 
+/** What a date holds, by entry type — so a delete can say what it will take. */
+export function entriesOn(state, date) {
+  const on = state.log.filter(e => e.date === date);
+  return {
+    water: on.filter(e => e.type === 'water').length,
+    reading: on.filter(e => e.type === 'reading').length,
+    total: on.length,
+  };
+}
+
+/** Delete every log entry on a date. Returns how many went.
+ *
+ *  The log is the source of truth, so this is not a cosmetic tidy-up: rebuild()
+ *  replays the season without those entries and every depletion figure from
+ *  that date forward changes. kSite is not replayed, so learning survives. */
+export function removeLogDate(state, date) {
+  const before = state.log.length;
+  state.log = state.log.filter(e => e.date !== date);
+  return before - state.log.length;
+}
+
 /** Collapse a date to one watering per plant, keeping the most recently
  *  entered — if two differ, the later one is the corrected intent. Readings
  *  are never touched. Returns how many entries were removed. */
@@ -276,11 +301,6 @@ export function dedupeWaterings(state, date) {
   state.log = state.log.filter(e =>
     e.type !== 'water' || e.date !== date || keep.get(e.plantId) === e.ts);
   return before - state.log.length;
-}
-
-/** The date new log entries should carry. */
-export function loggingDate(state) {
-  return state.logDate || isoDay();
 }
 
 export function logReading(state, plantId, band, result, date = isoDay()) {

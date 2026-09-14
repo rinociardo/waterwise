@@ -9,7 +9,7 @@
 // Bump CACHE on any release that changes the shell — old caches are deleted on
 // activate, so it is also the emergency lever if a client gets stuck.
 
-const CACHE = 'waterwise-v17';
+const CACHE = 'waterwise-v18';
 
 const SHELL = [
   './',
