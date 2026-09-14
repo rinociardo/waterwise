@@ -102,9 +102,11 @@ const TEMPLATES = [
          + "'Winterthur' sets very little fruit on its own pollen. Berries run "
          + 'green to pink to blue, often all three on one cluster.',
     name: 'Brandywine Viburnum', botanical: 'Viburnum nudum',
-    cultivar: "'Brandywine'", sizeLabel: '#3', qty: 1,
+    cultivar: "'Brandywine'", sizeLabel: '#3 (3 gal)', qty: 1,
     planted: '2026-09-14',
-    ballDiaIn: 8.5, ballDepthIn: 8, bufferFactor: 1.4, rootAccess0: 0.90,
+    // Trade #3, not a true 3 US gallons — nursery pot grades run small. Top
+    // diameter about 10.5 in, 9.5 deep, holding roughly 2.5 real gallons.
+    ballDiaIn: 10.5, ballDepthIn: 9.5, bufferFactor: 1.4, rootAccess0: 0.90,
     heightFt: 2.5, spreadFt: 2, ringDiaFt: 2, interception: 0.10,
     nurseryGal: 2, sun: 'full', evergreen: false,
     note: 'Ten days behind the rest of the yard on the establishment curve, so '

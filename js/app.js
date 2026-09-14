@@ -5,7 +5,7 @@ import * as store from './store.js';
 import { seedPlants } from './plants.js';
 import { getWeather, isoDay, rainWindow, climatologyET0 } from './weather.js';
 
-export const APP_VERSION = '1.15.0';   // bump with sw.js CACHE on every release
+export const APP_VERSION = '1.15.1';   // bump with sw.js CACHE on every release
 
 let state = store.load();
 let weather = { days: [], source: 'climatology' };
